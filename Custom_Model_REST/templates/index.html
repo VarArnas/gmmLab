@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Image Classifier</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 40px; }
+        .result { margin-top: 20px; }
+        .bar { height: 20px; background: #ddd; margin: 5px 0; }
+        .fill { height: 100%; background: #4CAF50; }
+        #metrics {
+        font-family: Arial, sans-serif;
+        margin: 20px 0;
+        padding: 15px;
+        background: #f8f9fa;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .metrics-grid p {
+            margin: 5px 0;
+            font-size: 0.9em;
+        }
+
+        #confusion-matrix {
+            border-collapse: collapse;
+            width: 100%;
+            margin-top: 10px;
+            font-size: 0.85em;
+        }
+
+        .header-cell {
+            background-color: #e9ecef;
+            padding: 8px 12px;
+            text-align: center;
+            border: 1px solid #dee2e6;
+            font-weight: bold;
+        }
+
+        .data-cell {
+            padding: 8px 12px;
+            text-align: center;
+            border: 1px solid #dee2e6;
+        }
+
+        #confusion-matrix th {
+            min-width: 100px;
+        }
+
+        #confusion-matrix td {
+            min-width: 80px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Upload Image</h1>
+    <input type="file" id="imageInput" accept="image/*">
+    <button onclick="predict()">Predict</button>
+    
+    <div id="result" class="result">
+        <div>Goose: <span id="goose">0%</span></div>
+        
+        <div>Jellyfish: <span id="jellyfish">0%</span></div>
+        
+        <div>Snail: <span id="snail">0%</span></div>
+    </div>
+
+    <br>
+    <br>
+    <button onclick="inference()">Perform Inference</button>
+    <br>
+    <p id="loading-text" style="display: none; font-weight: bold;">Performing inference...</p>
+    <br>
+    <br>
+    <div id="metrics">
+        <h3>Metrics</h3>
+        <p>Accuracy: <span id="accuracy">-</span></p>
+        <p>Precision: <span id="precision">-</span></p>
+        <p>Recall: <span id="recall">-</span></p>
+        <p>F1 Score: <span id="f1">-</span></p>
+        
+        <h3>Confusion Matrix</h3>
+        <table id="confusion-matrix">
+            <thead>
+                <tr>
+                    <th class="header-cell"></th>
+                    <th class="header-cell">Predicted: Goose</th>
+                    <th class="header-cell">Predicted: Jellyfish</th>
+                    <th class="header-cell">Predicted: Snail</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <th class="header-cell">Actual: Goose</th>
+                    <td class="data-cell" id="cm-00">0</td>
+                    <td class="data-cell" id="cm-01">0</td>
+                    <td class="data-cell" id="cm-02">0</td>
+                </tr>
+                <tr>
+                    <th class="header-cell">Actual: Jellyfish</th>
+                    <td class="data-cell" id="cm-10">0</td>
+                    <td class="data-cell" id="cm-11">0</td>
+                    <td class="data-cell" id="cm-12">0</td>
+                </tr>
+                <tr>
+                    <th class="header-cell">Actual: Snail</th>
+                    <td class="data-cell" id="cm-20">0</td>
+                    <td class="data-cell" id="cm-21">0</td>
+                    <td class="data-cell" id="cm-22">0</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <script>
+        async function predict() {
+            const fileInput = document.getElementById('imageInput');
+            if (!fileInput.files[0]) return alert('Please select an image');
+            
+            const formData = new FormData();
+            formData.append('file', fileInput.files[0]);
+            
+            try {
+                const response = await fetch('/predict', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const data = await response.json();
+                if (data.error) throw new Error(data.error);
+                
+                // Display results
+                document.getElementById('goose').textContent = `${(data.probabilities['goose'] * 100).toFixed(2)}%`;
+                document.getElementById('jellyfish').textContent = `${(data.probabilities['jellyfish'] * 100).toFixed(2)}%`;
+                document.getElementById('snail').textContent = `${(data.probabilities['snail'] * 100).toFixed(2)}%`;
+
+            } catch (error) {
+                alert(`Error: ${error.message}`);
+            }
+        }
+
+        async function inference() {
+            const loadingText = document.getElementById('loading-text');
+            try {
+                loadingText.style.display = 'block';
+                const response = await fetch('/inference');
+                const data = await response.json();
+                if (data.error) throw new Error(data.error);
+                
+                document.getElementById('accuracy').textContent = (data.metrics.accuracy * 100).toFixed(4);
+                document.getElementById('precision').textContent = (data.metrics.precision * 100).toFixed(4);
+                document.getElementById('recall').textContent = (data.metrics.recall * 100).toFixed(4);
+                document.getElementById('f1').textContent = (data.metrics.f1 * 100).toFixed(4);
+                
+                const cm = data.metrics.confusion_matrix;
+                for (let i = 0; i < 3; i++) {
+                    for (let j = 0; j < 3; j++) {
+                        document.getElementById(`cm-${i}${j}`).textContent = cm[i][j];
+                    }
+                }
+            } catch (error) {
+                alert(`Error: ${error.message}`);
+            } finally{
+                loadingText.style.display = 'none';
+            }
+        }
+    </script>
+</body>
+</html>
