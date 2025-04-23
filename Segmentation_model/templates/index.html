@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Image Segmentation</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 40px; }
+        .result { margin-top: 20px; }
+        #metrics {
+            font-family: Arial, sans-serif;
+            margin: 20px 0;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            width: 50%;
+        }
+        .metrics-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        .metrics-table th, .metrics-table td {
+            padding: 8px 12px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+        .metrics-table th {
+            background-color: #f2f2f2;
+            font-weight: bold;
+        }
+        .metrics-table tr:hover {
+            background-color: #f5f5f5;
+        }
+        .color-legend {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            margin-top: 15px;
+        }
+        .color-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .color-box {
+            width: 25px;
+            height: 25px;
+            border: 1px solid #000;
+        }
+        #loading-text {
+            display: none;
+            font-weight: bold;
+            color: #2c7be5;
+        }
+    </style>
+</head>
+<body>
+    <h1>Image Segmentation</h1>
+    <input type="file" id="imageInput" accept="image/*">
+    <button onclick="predict()">Predict</button>
+    
+    <div id="result" style="display: flex; justify-content: space-around; margin-top: 20px;">
+        <div>
+            <h3>Original Image</h3>
+            <img id="originalImage" style="max-width: 224px; max-height: 224px; border: 1px solid #ccc;">
+        </div>
+        <div>
+            <h3>Segmented Image</h3>
+            <img id="segmentedImage" style="max-width: 480px; max-height: 480px; border: 1px solid #ccc;">
+        </div>
+        <div class="color-legend">
+            <div class="color-item">
+                <div class="color-box" style="background-color: rgba(0, 0, 255, 0.6);"></div>
+                <span>Cello</span>
+            </div>
+            <div class="color-item">
+                <div class="color-box" style="background-color: rgba(0, 255, 0, 0.6);"></div>
+                <span>Piano</span>
+            </div>
+            <div class="color-item">
+                <div class="color-box" style="background-color: rgba(255, 0, 0, 0.6);"></div>
+                <span>Pizza</span>
+            </div>
+        </div>
+    </div>
+
+    <button onclick="runInference()" style="margin-left: 10px;">Calculate Metrics</button>
+    <div id="metrics-container" style="margin-top: 30px; display: none;">
+        <h2>Model Performance Metrics</h2>
+        <p id="loading-text">Calculating metrics...</p>
+        <div id="metrics">
+            <table class="metrics-table">
+                <thead>
+                    <tr>
+                        <th>Metric</th>
+                        <th>Value</th>
+                    </tr>
+                </thead>
+                <tbody id="metrics-body">
+                    <!-- Metrics will be inserted here -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        async function predict() {
+            const fileInput = document.getElementById('imageInput');
+            if (!fileInput.files[0]) return alert('Please select an image');
+            
+            const originalImage = document.getElementById('originalImage');
+            originalImage.src = URL.createObjectURL(fileInput.files[0]);
+            
+            const formData = new FormData();
+            formData.append('file', fileInput.files[0]);
+            
+            try {
+                const response = await fetch('/predict', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                
+                const imageBlob = await response.blob();
+                const segmentedImage = document.getElementById('segmentedImage');
+                segmentedImage.src = URL.createObjectURL(imageBlob);
+
+            } catch (error) {
+                alert(`Error: ${error.message}`);
+            }
+        }
+
+        async function runInference() {
+            const loadingText = document.getElementById('loading-text');
+            const metricsContainer = document.getElementById('metrics-container');
+            const metricsBody = document.getElementById('metrics-body');
+            
+            try {
+                // Show loading and metrics container
+                loadingText.style.display = 'block';
+                metricsContainer.style.display = 'block';
+                metricsBody.innerHTML = ''; // Clear previous results
+                
+                const response = await fetch('/inference');
+                if (!response.ok) {
+                    throw new Error('Failed to fetch metrics');
+                }
+                
+                const data = await response.json();
+                if (data.error) throw new Error(data.error);
+                
+                // Format metrics with percentage where appropriate
+                const metrics = [
+                    { name: 'Dice Score', value: (data.metrics.dice * 100).toFixed(2) + '%' },
+                    { name: 'F1 Macro', value: (data.metrics.f1_macro * 100).toFixed(2) + '%' },
+                    { name: 'F1 Micro', value: (data.metrics.f1_micro * 100).toFixed(2) + '%' },
+                    { name: 'Cello Dice', value: (data.metrics.Cello_dice * 100).toFixed(2) + '%' },
+                    { name: 'Piano Dice', value: (data.metrics.Piano_dice * 100).toFixed(2) + '%' },
+                    { name: 'Pizza Dice', value: (data.metrics.Pizza_dice * 100).toFixed(2) + '%' }
+                ];
+                
+                // Populate the table
+                metrics.forEach(metric => {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td>${metric.name}</td>
+                        <td>${metric.value}</td>
+                    `;
+                    metricsBody.appendChild(row);
+                });
+                
+            } catch (error) {
+                alert(`Error: ${error.message}`);
+                metricsContainer.style.display = 'none';
+            } finally {
+                loadingText.style.display = 'none';
+            }
+        }
+    </script>
+</body>
+</html>

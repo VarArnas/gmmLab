@@ -1,0 +1,4 @@
+*.pth
+checkResults.py
+samples/
+__pycache__/
