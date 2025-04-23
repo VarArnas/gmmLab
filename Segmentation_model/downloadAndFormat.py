@@ -82,8 +82,7 @@ if __name__ == "__main__":
             shutil.rmtree(dir_path) 
         os.makedirs(dir_path)
 
-    createDsAndExport("Cello", "train", 344)
-    createDsAndExport("Piano", "train", 344)
-    createDsAndExport("Pizza", "train", 344)
+    createDsAndExport("Pizza", "train", 334)
+    createDsAndExport("Dolphin", "train", 334)
+    createDsAndExport("Cucumber", "train", 334)
 
-    # print(np.stack(openimages.get_segmentation_classes(version='v7', dataset_dir=None)))

@@ -14,13 +14,12 @@ from torchmetrics import F1Score
 from torchmetrics.segmentation import DiceScore
 
 
-
 NUM_WORKERS = 2
 BATCH_SIZE = 24
 PREFETCH_FAC = 1
 TRAIN_PATH = "./samples/train"
 VALIDATION_PATH = "./samples/validation"
-LABELS = {"Cello" : 1, "Piano" : 2, "Pizza" : 3}
+LABELS = {"Cucumber" : 1, "Dolphin" : 2, "Pizza" : 3}
 LEARNING_RATE = 0.001
 NUM_EPOCHS = 100
 
@@ -83,7 +82,7 @@ def train(trainDL, validateDL):
     best_total = 0.0
     if os.path.exists("./modelData/best_dice.pth"):
         checkpoint = torch.load("./modelData/best_dice.pth")
-        best_total = checkpoint['dice'] + checkpoint['f1_macro']
+        best_total = checkpoint['dice']
 
     for epoch in range(NUM_EPOCHS):
         model.train()
@@ -110,7 +109,7 @@ def train(trainDL, validateDL):
             acc_loss += loss.item()
 
         acc_loss = acc_loss / len(trainDL)
-        metrics = inference(validateDL)
+        metrics = inference(validateDL, model)
 
         log_text = (
             f"Epoch: {epoch+1}\n"
@@ -120,8 +119,8 @@ def train(trainDL, validateDL):
             f"F1_Micro: {metrics['f1_micro']:.4f}\n"
             f"Dice_single:\n"
             f"   Background: {metrics['dice_single'][0]}\n"
-            f"   Cello: {metrics['dice_single'][1]}\n"
-            f"   Piano: {metrics['dice_single'][2]}\n"
+            f"   Cucumber: {metrics['dice_single'][1]}\n"
+            f"   Dolphin: {metrics['dice_single'][2]}\n"
             f"   Pizza: {metrics['dice_single'][3]}\n"
             f"Last learning rate: {scheduler.get_last_lr()}\n\n"
         )
@@ -129,7 +128,7 @@ def train(trainDL, validateDL):
         with open('./modelData/logs.txt', 'a') as log_file:
             log_file.write(log_text)
 
-        current_total = metrics['dice'] + metrics['f1_macro']
+        current_total = metrics['dice']
         if current_total > best_total and epoch > 20:
             best_total = current_total
             state = {

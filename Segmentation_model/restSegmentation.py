@@ -46,8 +46,8 @@ def visualize_prediction_overlay(original_img, prediction):
     
     class_colors = {
         0: [0, 0, 0, 0],      
-        1: [0, 0, 255, 150],  # blue cello
-        2: [0, 255, 0, 150],  # green piano
+        1: [0, 0, 255, 150],  # blue cucumber
+        2: [0, 255, 0, 150],  # green dolphin
         3: [255, 0, 0, 150]   # red pizza
     }
     
@@ -106,8 +106,8 @@ def inference():
                 'dice': metrics['dice'].item(),
                 'f1_macro': metrics['f1_macro'].item(),
                 'f1_micro': metrics['f1_micro'].item(),
-                'Cello_dice': metrics['dice_single'][1].item(),
-                'Piano_dice': metrics['dice_single'][2].item(),
+                'Cucumber_dice': metrics['dice_single'][1].item(),
+                'Dolphin_dice': metrics['dice_single'][2].item(),
                 'Pizza_dice': metrics['dice_single'][3].item()
             }
         })

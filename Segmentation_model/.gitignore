@@ -2,3 +2,4 @@
 checkResults.py
 samples/
 __pycache__/
+store/
