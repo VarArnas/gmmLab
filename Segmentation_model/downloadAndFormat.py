@@ -69,12 +69,12 @@ def createDsAndExport(className, typeOfData, size):
 if __name__ == "__main__":
 
     output_dirs = [
+        "./samples/train/Cello",
+        "./samples/train/Piano",
         "./samples/train/Pizza",
-        "./samples/train/Car",
-        "./samples/train/Rocket",
-        "./samples/validation/Pizza",
-        "./samples/validation/Car",
-        "./samples/validation/Rocket"
+        "./samples/validation/Cello",
+        "./samples/validation/Piano",
+        "./samples/validation/Pizza"
     ]
     
     for dir_path in output_dirs:
